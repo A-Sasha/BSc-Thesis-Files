@@ -1,0 +1,71 @@
+*ring oscillators
+
+.include CD74HC04.cir
+
+*.SUBCKT CD74HC04 Y A VCC AGND
+
+
+*Total simulation time
+
+.param simtime = 5.000000E-03;
+.param vdd_valueA=3;
+.param vdd_valueB = 4;
+.param f_mod=4E+3;
+.param modR 150E+3;
+*.step param f_mod 1k 12k 0.5k;
+*.step param vdd_valueB 2 4 0.1;
+
+
+.param couplingRes = 100E+3;
+
+.param rout = 1.000000E+04;
+.param cout = 220.000000E-12;
+
+
+
+
+
+.subckt inverter vdd in out out1
+Xtimodel out1 in vdd 0 CD74HC04
+Ro out1 out 'rout'
+Co out 0 'cout'
+Rgnd out 0 1.0meg
+.ends
+
+.subckt oscillator vdd  node1 node2 node3 out3_internal
+xinv1 vdd  node1 node2 out1_internal inverter
+xinv2 vdd  node2 node3 out2_internal inverter
+xinv3 vdd  node3 node1 out3_internal inverter
+.ends
+
+
+
+
+
+
+
+*Ring oscillators are placed
+XoscA vddA  nodeA1 nodeA2 nodeA3  outA3_internal oscillator
+XoscB vddB  nodeB1 nodeB2 nodeB3  outB3_internal oscillator
+
+
+.ic v(nodeA2)=0.0002
+*.ic v(nodeA3)=0
+
+.ic v(nodeB2)=2
+*.ic v(nodeB3)=0
+
+
+VddA vddA 0 dc  'vdd_valueA'
+VddB vddB 0 dc  'vdd_valueB'
+Rcoupling nodeA1 nodeB1 'couplingRes'
+*Rmod nodeR nodeA2 'modR'
+*V_mod nodeR 0 AC 5 SIN(0 5 {f_mod})
+
+
+.save v(outA3_internal)
+.save v(outB3_internal)
+
+
+
+.tran 0 'simtime' 0  uic
